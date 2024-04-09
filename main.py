@@ -33,10 +33,20 @@ def generate_mainstat_artifact():
 
     #on-set or off-set
     results.append(round(odds[0]))
+    print("on-set") if odds[0] > 0.5 else print("off-set")
     #what piece
     results.append(math.floor(odds[1]*5)) if odds[1]<0.99999 else results.append(4)
+    print(artifacts[results[1]])
     # main stat
-
+    current_odds = 0
+    curr_index = 0
+    for stat, chance in mainstat_odds[results[1]].items():
+        current_odds += chance
+        if current_odds >= odds[2]:
+            print(stat,", number:", odds[2])
+            results.append(curr_index)
+            break
+        curr_index += 1
 
     print(odds)
     return results
@@ -64,8 +74,5 @@ print("artifact:" ,generate_mainstat_artifact())
 # results:
 # on-set, what piece, main stat, sub-stat 1, sub-stat 2, sub-stat 3, sub-stat 4 (if applicable)
 
-
-# match mode:
-#     case 0:
 
 
