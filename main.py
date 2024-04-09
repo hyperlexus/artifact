@@ -43,7 +43,7 @@ def generate_mainstat_artifact():
     for stat, chance in mainstat_odds[results[1]].items():
         current_odds += chance
         if current_odds >= odds[2]:
-            print(stat,", number:", odds[2])
+            print(stat)
             results.append(curr_index)
             break
         curr_index += 1
@@ -67,7 +67,7 @@ while not mode_done:
         print("enter only integers from (including) 0-4. try again.")
         mode = input("Enter mode: ")
 
-print(f"Mode {mode}: " + modes[mode])
+print(f"Mode {mode}: {modes[mode]}")
 print("artifact:" ,generate_mainstat_artifact())
 
 
