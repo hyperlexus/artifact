@@ -1,6 +1,8 @@
 import random
 import math
 import sys
+import copy
+import time
 
 artifact_list = ["flower", "feather", "sands", "goblet", "circlet"]
 # data from the wiki
@@ -65,14 +67,14 @@ def add_substats(artifact, mode):
 
     #remove main stat from weight
     sum_substats = 46
-    mod_dict = substat_weight
+    mod_dict = copy.deepcopy(substat_weight)
     desired_dict = mainstat_odds[artifact[1]]
     item_to_pop = list(desired_dict.items())[artifact[2]]
     if item_to_pop[0] in mod_dict:
         sum_substats -= mod_dict[item_to_pop[0]]
         mod_dict.pop(item_to_pop[0])
 
-    # literally wtf does this do
+    # adds random substats based on main stat and randomnumber
     for i in range(4):
         randomstat = random.random() * sum_substats
         matcher = 0
@@ -89,40 +91,54 @@ def add_substats(artifact, mode):
 # append a "-1" as substats[4] if artifact rolls 3 stats only so we know if the artifact was "supposed to" roll 3 or 4 stats.
 # we still need the 4th so we dont have to do calculations twice.
 
-# mode = input("Enter mode: ")
-
-mode = 0 # TEMP FIX REMOVE THIS
-
-mode_done = False
-while not mode_done:
-    try:
-        mode = int(mode)
-    except:
-        print("please input a number. try again.")
-        mode = input("Enter mode: ")
-        continue
-
-    if -1<mode<5:
-        mode_done = True
-    else:
-        print("enter only integers from (including) 0-4. try again.")
-        mode = input("Enter mode: ")
-
-print(f"Mode {mode}: {modes[mode]}")
-
-def output(artifact, mode):
+def output_0(artifact, mode):
+    # terminal output for mode 0. take an artifact in the form of [a, b, c, [d, e, f, g, -1/-2]] and turn it into a sentence.
     os = "Your artifact is an "
     os += "on-set " if artifact[0] == 0 else "off-set "
     os += artifact_list[artifact[1]]
-    os += " with a "
+    os += " with mainstat "
+    os += list(mainstat_odds[artifact[1]].items())[artifact[2]][0]
+    os += ". Its substats are "
+    substat_amount = 4 if artifact[3][4] == -2 else 3
+    for i in range(substat_amount):
+        os += substat_list[artifact[3][i]]
+        os += ", " if i < substat_amount-1 else ""
+    os += "."
+    return os
 
+def main():
+    # getting program mode from user
+    mode = input("Enter mode: ")
+    mode_done = False
+    while not mode_done:
+        try:
+            mode = int(mode)
+        except:
+            print("please input a number. try again.")
+            mode = input("Enter mode: ")
+            continue
 
+        if -1<mode<5:
+            mode_done = True
+        else:
+            print("enter only integers from (including) 0-4. try again.")
+            mode = input("Enter mode: ")
+    print(f"Mode {mode}: {modes[mode]}")
 
-match mode:
-    case 0:
-        x = input("how many artifacts do you want to create? ")
-        artifact = new_mainstat_artifact()
-        artifact.append(add_substats(artifact, int(input('input substat mode (0 = domain, 1 = strongbox): '))))
-        print("artifact:", artifact)
+    # main execution
+    match mode:
+        case 0:
+            x = int(input("how many artifacts do you want to create? "))
+            artifacts = []
+            domain_mode = int(input('input chance for 4 substats. domain = 20%, strongbox = 34%. (0 = domain, 1 = strongbox): '))
+            for i in range(x):
+                artifacts.append(new_mainstat_artifact())
+                artifacts[i].append(add_substats(artifacts[i], domain_mode))
+                # print("artifact:", artifact)
+                if i == 0:
+                    print('')
+                print(output_0(artifacts[i], domain_mode))
+        case _:
+            print("\nthis mode is not implemented yet. please check back later or open a pull request <3")
 
-        output(artifact, mode)
+main()
