@@ -17,6 +17,7 @@ substat_weight = {"HP": 6, "ATK": 6, "DEF": 6, "%HP": 4, "%ATK": 4, "%DEF": 4, "
 substat_list = ["HP", "ATK", "DEF", "%HP", "%ATK", "%DEF", "ER", "EM", "CR", "CD"]
 #other stuff
 double_5star = 0.061032864
+double_runs = 0
 
 # possible running modes
 modes = [
@@ -91,7 +92,37 @@ def add_substats(artifact, mode):
 # append a "-1" as substats[4] if artifact rolls 3 stats only so we know if the artifact was "supposed to" roll 3 or 4 stats.
 # we still need the 4th so we dont have to do calculations twice.
 
-def output_0(artifact, mode):
+def domain_run():
+    result = []
+    global double_runs
+    rand = random.random()
+    result.append(new_mainstat_artifact())
+    result[0].append(add_substats(result[0], 0))
+    if rand<double_5star:
+        result.append(new_mainstat_artifact())
+        result[1].append(add_substats(result[1], 0))
+        double_runs += 1
+    return result
+
+def resin(runs):
+    os = 'Resin spent: '
+    resin_amount = runs*20
+
+    minutes = resin_amount*8
+    days = minutes // (24 * 60)
+    weeks = days // 7
+    hours = (minutes % (24 * 60)) // 60
+    remaining_minutes = minutes % 60
+
+    os += str(resin_amount) + " on " + str(runs) + " runs. Time to generate resin: "
+    os += f"{days}d {hours:02}h {remaining_minutes:02}m."
+    if days > 6:
+        days = days % 7
+        os = os[:-1]
+        os += f" / {weeks}w {days:01}d {hours:02}h {remaining_minutes:02}m."
+    return os
+
+def output_0(artifact):
     # terminal output for mode 0. take an artifact in the form of [a, b, c, [d, e, f, g, -1/-2]] and turn it into a sentence.
     os = "Your artifact is an "
     os += "on-set " if artifact[0] == 0 else "off-set "
@@ -104,6 +135,17 @@ def output_0(artifact, mode):
         os += substat_list[artifact[3][i]]
         os += ", " if i < substat_amount-1 else ""
     os += "."
+    return os
+
+def output_1(artifacts):
+    os = '\n'
+    if len(artifacts) == 1:
+        os += output_0(artifacts[0])
+        os = os[17:]
+        os = f"Your domain returned{os}"
+    elif len(artifacts) == 2:
+        os = f"Your first{output_0(artifacts[0])[4:]}"[:-1]
+        os += f", and your second{output_0(artifacts[1])[4:]}"
     return os
 
 def main():
@@ -134,11 +176,18 @@ def main():
             for i in range(x):
                 artifacts.append(new_mainstat_artifact())
                 artifacts[i].append(add_substats(artifacts[i], domain_mode))
-                # print("artifact:", artifact)
                 if i == 0:
                     print('')
-                print(output_0(artifacts[i], domain_mode))
+                print(output_0(artifacts[i]))
+        case 1:
+            x = int(input("how many domain runs do you want to simulate? "))
+            artifacts = []
+            for i in range(x):
+                print(output_1(domain_run()))
+            print("\n"+resin(x))
+            print(f"Artifacts generated: {x+double_runs}. This is {x*20/(x+double_runs):.5f} resin per artifact. Note that this number becomes more accurate the more domain runs you do; it converges to 18.84956 Resin with n → ∞")
         case _:
             print("\nthis mode is not implemented yet. please check back later or open a pull request <3")
+
 
 main()

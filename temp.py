@@ -1,3 +1,5 @@
+import random
+
 data = [
     {"HP": 100},
     {"ATK": 100},
@@ -6,9 +8,11 @@ data = [
     {"HP": 22, "ATK": 22, "DEF": 22, "CR": 10, "CD": 10, "HB": 10, "EM": 4}
 ]
 
+odds = 1.061032864
 
 for item in data:
     for key, value in item.items():
         item[key] = value / 100
 
-print(data)
+
+print(20/odds)
