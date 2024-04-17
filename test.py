@@ -12,7 +12,7 @@ for result, odds in results_odds.items():
         break
 
 
-print(results_odds.items())
+#print(results_odds.items())
 
 # discord fuckery
 handshakes = ""
@@ -22,5 +22,14 @@ for i in range(1, 6):
             handshakes += ":handshake_tone" + str(j) + "_tone" + str(i) + ": "
         else:
             continue
-print(handshakes)
+#print(handshakes)
 
+# binomial
+def cdf(n,p):
+    # Building my own binomial distribution because yuck, libraries
+    p1=n*p*(1-p)**(p-1)
+    prc=p1*100
+    return prc
+
+
+print(cdf(11, 0.1))
