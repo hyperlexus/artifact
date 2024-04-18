@@ -21,11 +21,26 @@ double_runs = 0
 modes = [
 "generate X random artifacts",
 "simulate X domain runs",
-"generate artifacts until a certain correct artifact comes out",
+"generate artifacts until X certain correct artifacts come out",
 "generate artifacts until the correct artifact with all correct substats comes out",
 "generate artifacts until the correct artifact with all correct substats and all correct rolls comes out"
 "input or generate an artifact and roll its substats manually"
 ]
+
+## helpers
+# checks if an array 'x' is not in 2d array 'y'
+def notin(x, y):
+    return not any(all(x_elem == y_elem for x_elem, y_elem in zip(x, sub_array)) for sub_array in y)
+#checks where array 'x' is in 2d array 'y'; "arraymatchindex"
+def ami(x, y):
+    for i, row in enumerate(y):
+        if all(elem == val for elem, val in zip(x, row)):
+            return i
+    return -1
+#rounds only if float 'n' has int 'x' or more decimals; "round if necessary"
+def rin(n,x):
+    s = f"{{:.{x}f}}".format(n)
+    return float(s)
 
 def new_mainstat_artifact():
     # generates a new artifact in the format of [x, y, z] with x = on-set/off-set, y = type of artifact and z = main-stat.
@@ -126,7 +141,7 @@ def resin(runs, mode):
             weeks = weeks % 52
             os = os[:-1]
             os += f" / {years}y {weeks}w {days:01}d {hours:02}h {remaining_minutes:02}m."
-    os += " (this is an estimate as it is random if you get 2 artifacts from 1 domain run.)"
+    os += " (this is an estimate as it is random if you get 2 artifacts from 1 domain run.)" if mode == 0 else ""
     return os
 
 def output_0(artifact):
@@ -163,86 +178,111 @@ def output_2(artifact, tries, odds):
     os += artifact_list[artifact[1]]
     os += " with mainstat "
     os += list(mainstat_odds[artifact[1]].items())[artifact[2]][0]
-    os += f". The chance of this happening is {odds*100}%, but you got it in {tries} tries. The probability of this or a better result is {round((1-(1-odds)**tries)*100,4)}%. (smaller number = better, 50% is average)."
+    if odds > 0:
+        os += f". The chance of this happening is {rin(odds*100,4)}%, {'and' if rin((1-(1-odds)**tries)*100,4) > 80 else 'but'} you got it in {tries} tries. The probability of a better result is {rin((1-(1-odds)**tries)*100,4)}%. (smaller number = better, 50% is average)."
+    elif odds == 0:
+        os += f"The entire process took a total of {tries} tries."
     return os
 
-def input_artifact(mode):
+def input_artifact(mode, iteration):
     # takes user input to construct own artifact. Mode 2 is just main stat, Mode 3 is sub-stats and Mode 4 is sub-stats and rolls.
+    print(f"\nYou are now inputting artifact number {iteration+1}.")
     print("\nIt is assumed that you want your artifact to be on-set, so this input step is skipped.")
     goal_artifact = [0]
     print(f"List of artifact types: {', '.join(artifact_list)}")
-    goal_artifact.append(int(input(f"Input a number from 1 to 5, corresponding with the list above: "))-1)
+    try:
+        goal_artifact.append(int(input(f"Input a number from 1 to 5, corresponding with the list above: "))-1)
+    except ValueError:
+        return False
     if goal_artifact[1] < 0 or goal_artifact[1] > 4:
         return False
     desired_dict = mainstat_odds[goal_artifact[1]]
     print(f"List of possible main stats for your artifact: {', '.join(desired_dict.keys())}")
-    goal_artifact.append(int(input(f"Input a number from 1 to {len(desired_dict.values())}, corresponding with the list above: "))-1)
+    try:
+        goal_artifact.append(int(input(f"Input a number from 1 to {len(desired_dict.values())}, corresponding with the list above: "))-1)
+    except ValueError:
+        return False
     if goal_artifact[2] < 0 or goal_artifact[2] > len(desired_dict.values())-1:
         return False
     return goal_artifact
 
 def main():
     # getting program mode from user
-    mode = input("Enter mode: ")
-    mode_done = False
-    while not mode_done:
+    while True:
         try:
-            mode = int(mode)
+            mode = int(input("Enter mode: "))
         except:
-            print("please input a number. try again.")
-            mode = input("Enter mode: ")
+            print("Please input a number. try again.")
             continue
 
         if -1<mode<5:
-            mode_done = True
+            break
         else:
             print("enter only integers from (including) 0-4. try again.")
-            mode = input("Enter mode: ")
     print(f"Mode {mode}: {modes[mode]}")
 
     # main execution
-    match mode:
-        case 0:
-            x = int(input("how many artifacts do you want to create? "))
-            artifacts = []
-            domain_mode = int(input('input chance for 4 substats. domain = 20%, strongbox = 34%. (0 = domain, 1 = strongbox): '))
-            if x < 1:
-                print("No artifacts generated. Exiting...")
-                sys.exit(69)
-            for i in range(x):
-                artifacts.append(new_mainstat_artifact())
-                artifacts[i].append(add_substats(artifacts[i], domain_mode))
-                print(output_0(artifacts[i]))
-            if domain_mode == 0 or 1:
-                print("\n"+resin(x,domain_mode)) if domain_mode == 0 else print(f"Artifacts consumed in the strongbox: {math.ceil(x/3)} for {x} new artifacts.")
-        case 1:
-            x = input("how many domain runs do you want to simulate? ")
-            if "resin" in x:
-                x = int(int(x[:-6]) / 20)
-            else:
-                x = int(x)
-            artifacts = []
-            for i in range(x):
-                print(output_1(domain_run()))
-            print("\n"+resin(x, 1))
-            print(f"Artifacts generated: {x+double_runs}. This is {x*20/(x+double_runs):.5f} resin per artifact. Note that this number becomes more accurate the more domain runs you do; it converges to 18.84956 Resin with n → ∞")
-        case 2:
-            goal_artifact = input_artifact(2)
-            while not goal_artifact:
+    def mode0():
+        x = int(input("how many artifacts do you want to create? "))
+        artifacts = []
+        domain_mode = int(input('input chance for 4 substats. domain = 20%, strongbox = 34%. (0 = domain, 1 = strongbox): '))
+        if x < 1:
+            print("No artifacts generated. Exiting...")
+            sys.exit(69)
+        for i in range(x):
+            artifacts.append(new_mainstat_artifact())
+            artifacts[i].append(add_substats(artifacts[i], domain_mode))
+            print(output_0(artifacts[i]))
+        if domain_mode == 0 or 1:
+            print("\n"+resin(x,domain_mode)) if domain_mode == 0 else print(f"Artifacts consumed in the strongbox: {math.ceil(x/3)} for {x} new artifacts.")
+    def mode1():
+        x = input("how many domain runs do you want to simulate? ")
+        if "resin" in x:
+            x = int(int(x[:-6]) / 20)
+        else:
+            x = int(x)
+        artifacts = []
+        for i in range(x):
+            print(output_1(domain_run()))
+        print("\n"+resin(x, 1))
+        print(f"Artifacts generated: {x+double_runs}. This is {x*20/(x+double_runs):.5f} resin per artifact. Note that this number becomes more accurate the more domain runs you do; it converges to 18.84956 Resin with n → ∞")
+    def mode2():
+        goal_artifacts = []
+        amount = int(input("How many artifacts do you want to generate? "))
+        for i in range(amount):
+            goal_artifacts.append(input_artifact(2, i))
+            while not goal_artifacts[i]:
                 print('')
                 print("\u001b[31mYou seem to have made a mistake in the artifact inputting process, please read the instructions closely and try again.\u001b[0m")
-                goal_artifact = input_artifact(2)
+                goal_artifacts.pop()
+                goal_artifacts.append(input_artifact(2, i))
             artifact = new_mainstat_artifact()
-            index = 0
-            while goal_artifact != artifact:
+        index, index_pa = 0, 1
+        tries = []
+        print('')
+        while len(goal_artifacts) > 0:
+            if notin(artifact, goal_artifacts):
                 artifact = new_mainstat_artifact()
-                index += 1
-            # figure out the odds for this artifact appearing
-            odds = round(0.5*0.2*[value for value in mainstat_odds[goal_artifact[1]].values()][goal_artifact[2]],5)
-            #index = amount of tries it took
-            print(f"{output_2(artifact, index, odds)}")
-        case _:
-            print("\nthis mode is not implemented yet. please check back later or open a pull request <3")
+                index_pa += 1
+            else:
+                pop_index = ami(artifact, goal_artifacts)
+                odds = round(0.5 * 0.2 * [value for value in mainstat_odds[goal_artifacts[pop_index][1]].values()][goal_artifacts[pop_index][2]], 5)
+                index += index_pa
+                tries.append(index_pa)
+                index_pa = 0
+                print(f"{output_2(goal_artifacts[pop_index], index, odds)}")
+                goal_artifacts.pop(pop_index)
+        os = ''
+        os += ", ".join([str(i) for i in tries])
+        print(f"\nThe entire process took {index} tries. Tries per artifact: {os}")
+        print(resin(index, 0))
+    # why the fuck did python only implement switch statements 3 years ago
+    # eval? more like evil
+    eval("mode"+str(mode)+"()")
 
-
-main()
+while True:
+    main()
+    if input("Do you want to run the script again? (Y/n)") != "n":
+        continue
+    else:
+        break
