@@ -28,19 +28,25 @@ modes = [
 ]
 
 ## helpers
-# checks if an array 'x' is not in 2d array 'y'
 def notin(x, y):
+    # returns true if an array 'x' is not in 2d array 'y'
     return not any(all(x_elem == y_elem for x_elem, y_elem in zip(x, sub_array)) for sub_array in y)
-#checks where array 'x' is in 2d array 'y'; "arraymatchindex"
-def ami(x, y):
+def i2d(x, y):
+    # returns index of array x in 2d array y; "index 2d"
     for i, row in enumerate(y):
         if all(elem == val for elem, val in zip(x, row)):
             return i
     return -1
-#rounds only if float 'n' has int 'x' or more decimals; "round if necessary"
 def rin(n,x):
+    # returns float s, rounded only if float 'n' has int 'x' or more decimals; "round if necessary"
     s = f"{{:.{x}f}}".format(n)
     return float(s)
+#
+def am(s,a):
+    # returns index of element s in array a; "array matcher"
+    for i in range(len(a)):
+        if s == a[i]:
+            return i
 
 def new_mainstat_artifact():
     # generates a new artifact in the format of [x, y, z] with x = on-set/off-set, y = type of artifact and z = main-stat.
@@ -185,24 +191,38 @@ def output_2(artifact, tries, odds):
     return os
 
 def input_artifact(mode, iteration):
-    # takes user input to construct own artifact. Mode 2 is just main stat, Mode 3 is sub-stats and Mode 4 is sub-stats and rolls.
-    print(f"\nYou are now inputting artifact number {iteration+1}.")
-    print("\nIt is assumed that you want your artifact to be on-set, so this input step is skipped.")
-    goal_artifact = [0]
-    print(f"List of artifact types: {', '.join(artifact_list)}")
     try:
-        goal_artifact.append(int(input(f"Input a number from 1 to 5, corresponding with the list above: "))-1)
+        # takes user input to construct own artifact. Mode 2 is just main stat, Mode 3 is sub-stats and Mode 4 is sub-stats and rolls.
+        if mode > 1:
+            print(f"\nYou are now inputting artifact number {iteration+1}.")
+            print("\nIt is assumed that you want your artifact to be on-set, so this input step is skipped.")
+            goal_artifact = [0]
+            print(f"List of artifact types: {', '.join(artifact_list)}")
+            goal_artifact.append(int(input(f"Input a number from 1 to 5, corresponding with the list above: "))-1)
+            if goal_artifact[1] < 0 or goal_artifact[1] > 4:
+                return False
+            desired_dict = mainstat_odds[goal_artifact[1]]
+            print(f"List of possible main stats for your artifact: {', '.join(desired_dict.keys())}")
+            goal_artifact.append(int(input(f"Input a number from 1 to {len(desired_dict.values())}, corresponding with the list above: "))-1)
+            if goal_artifact[2] < 0 or goal_artifact[2] > len(desired_dict.values())-1:
+                return False
+
+        if mode > 2:
+            goal_artifact.append([])
+            allowed_list = copy.deepcopy(substat_list)
+            item_to_pop = list(mainstat_odds[goal_artifact[1]].items())[goal_artifact[2]]
+            if item_to_pop[0] in allowed_list:
+                allowed_list.pop(am(item_to_pop[0], allowed_list))
+            amount = int(input("You are now inputting substats. How many substats do you want to check for? "))
+            for i in range(amount):
+                print(f"List of possible substats: {', '.join(allowed_list)}")
+                desired_substat = int(input(f"Input a number from 1 to {len(allowed_list)}, corresponding with the list above: "))-1
+                goal_artifact[3].append(am(allowed_list[desired_substat], substat_list))
+                allowed_list.pop(desired_substat)
+            print(goal_artifact)
     except ValueError:
         return False
-    if goal_artifact[1] < 0 or goal_artifact[1] > 4:
-        return False
-    desired_dict = mainstat_odds[goal_artifact[1]]
-    print(f"List of possible main stats for your artifact: {', '.join(desired_dict.keys())}")
-    try:
-        goal_artifact.append(int(input(f"Input a number from 1 to {len(desired_dict.values())}, corresponding with the list above: "))-1)
-    except ValueError:
-        return False
-    if goal_artifact[2] < 0 or goal_artifact[2] > len(desired_dict.values())-1:
+    except IndexError:
         return False
     return goal_artifact
 
@@ -215,10 +235,10 @@ def main():
             print("Please input a number. try again.")
             continue
 
-        if -1<mode<5:
+        if -1<mode<6:
             break
         else:
-            print("enter only integers from (including) 0-4. try again.")
+            print("Enter only integers from (including) 0-5. try again.")
     print(f"Mode {mode}: {modes[mode]}")
 
     # main execution
@@ -265,7 +285,7 @@ def main():
                 artifact = new_mainstat_artifact()
                 index_pa += 1
             else:
-                pop_index = ami(artifact, goal_artifacts)
+                pop_index = i2d(artifact, goal_artifacts)
                 odds = round(0.5 * 0.2 * [value for value in mainstat_odds[goal_artifacts[pop_index][1]].values()][goal_artifacts[pop_index][2]], 5)
                 index += index_pa
                 tries.append(index_pa)
@@ -276,12 +296,24 @@ def main():
         os += ", ".join([str(i) for i in tries])
         print(f"\nThe entire process took {index} tries. Tries per artifact: {os}")
         print(resin(index, 0))
+    def mode3():
+        goal_artifacts = []
+        amount = int(input("How many artifacts do you want to generate? "))
+        for i in range(amount):
+            goal_artifacts.append(input_artifact(3, i))
     # why the fuck did python only implement switch statements 3 years ago
     # eval? more like evil
     eval("mode"+str(mode)+"()")
 
 while True:
-    main()
+    try:
+        main()
+    except NameError:
+        print("This mode is not implemented yet (you can help!), or you didn't enter a valid mode. Please hit enter and try again.")
+        continue
+    except IndexError:
+        print("This mode is not implemented yet. Please wait or submit a pull request! <3")
+        continue
     if input("Do you want to run the script again? (Y/n)") != "n":
         continue
     else:
