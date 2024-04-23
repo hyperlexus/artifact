@@ -33,6 +33,28 @@ def matcher(s,a):
     for i in range(len(a)):
         if s == a[i]:
             return i
+#print(matcher("%HP",["HP", "ATK", "DEF", "%HP", "%ATK", "%DEF", "ER", "EM", "CR", "CD"]))
 
-print(matcher("%HP",["HP", "ATK", "DEF", "%HP", "%ATK", "%DEF", "ER", "EM", "CR", "CD"]))
+def cia(a1,a2,n):
+    return len(set(a1) & set(a2)) >= n
 
+#print(cia([1,2,3,4,5,6],[1,2,3,4,5],0))
+
+def ca3(a, b, n):
+    if len(a) != len(b):
+        print(f"{a}, {b}")
+        return False
+    count = 0
+    for i in range(len(a)):
+        if type(a[i]) == list:
+            for j in b[3]:
+                if j in a[3]:
+                    count += 1
+            return count >= n
+        else:
+            if a[i] != b[i]:
+                return False
+    return True
+
+print(ca3([0, 1, 0, [1, 4, 8, 9]], [0, 1, 0, [8, 9, 12]], 1))
+print(ca3([0, 1, 0, [1, 4, 8, 9]], [0, 1, 0, [8, 4, 9]], 1))
