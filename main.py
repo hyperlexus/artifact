@@ -19,12 +19,12 @@ double_runs = 0
 
 # possible running modes
 modes = [
-    "generate X random artifacts",
-    "simulate X domain runs",
-    "generate artifacts until X certain correct artifacts come out",
-    "generate artifacts until the correct artifact with all correct substats comes out",
-    "generate artifacts until the correct artifact with all correct substats and all correct rolls comes out"
-    "input or generate an artifact and roll its substats manually"
+    "Mode 0: generate X random artifacts",
+    "Mode 1: simulate X domain runs",
+    "Mode 2: generate artifacts until X certain correct artifacts come out",
+    "Mode 3: generate artifacts until the correct artifact with all correct substats comes out",
+    "Mode 4: generate artifacts until the correct artifact with all correct substats and all correct rolls comes out"
+    "Mode 5: input or generate an artifact and roll its substats manually"
 ]
 
 ## helpers (yes i know these are unreadable, i didnt want them to be endlessly long since they're just one-time functionality)
@@ -255,16 +255,19 @@ def main():
     # getting program mode from user
     while True:
         try:
-            mode = int(input("Enter mode: "))
+            mode = int(input("Enter mode (enter -1 for a list of modes): "))
         except:
             print("Please input a number. try again.")
             continue
 
-        if -1<mode<6:
+        if mode == -1:
+            print('\n'.join([i for i in modes]))
+            continue
+        if -2<mode<6:
             break
         else:
             print("Enter only integers from (including) 0-5. try again.")
-    print(f"Mode {mode}: {modes[mode]}")
+    print(modes[mode])
 
     # main execution
     def mode0():
@@ -333,8 +336,10 @@ def main():
         artifact = not_for_rolling(domain_mode)
         while len(goal_artifacts) > 0:
             for j in range(len(goal_artifacts)):
+                if len(found) > 1:
+                    break
                 if ca3(artifact, goal_artifacts[j], len(goal_artifacts[j][3])):
-                    found.append(am(goal_artifacts[j], goal_artifacts))
+                    found.append(goal_artifacts[am(goal_artifacts[j], goal_artifacts)])
                     break
                 else:
                     index_pa += 1
@@ -344,24 +349,27 @@ def main():
             if index_pa == 1000000:
                 print("1m generated, exiting since either broken or too improbable")
                 sys.exit(1)
-            if len(found) > len(goal_artifacts):
-                print(found)
-                print(goal_artifacts[j])
+            while len(found) > 0:
+                goal_artifacts.pop(am(found[0],goal_artifacts))
+                found.pop(0)
+                index += index_pa
+                tries.append(index_pa)
                 print(artifact)
-                print(index_pa)
                 break
+        print(tries, index)
+        print(resin(index, 0))
 
         # somehow note down what the artifacts we have to pop are, and then pop them, while returning the odds and finding the amount of tries it took
 
 
     # why the fuck did python only implement switch statements 3 years ago
     # eval? more like evil
-    try:
-        eval("mode"+str(mode)+"()")
-    except NameError:
-        print("This mode is not implemented yet (you can help!), or you didn't enter a valid mode. Please hit enter and try again.")
-    except IndexError:
-        print("This mode is not implemented yet. Please wait or submit a pull request! <3")
+    # try:
+    eval("mode"+str(mode)+"()")
+    # except NameError:
+    #     print("This mode is not implemented yet (you can help!), or you didn't enter a valid mode. Please hit enter and try again.")
+    # except IndexError:
+    #     print("This mode is not implemented yet. Please wait or submit a pull request! <3")
 
 
 while True:
