@@ -200,7 +200,7 @@ def output_1(artifacts):
 
 def output_2(artifact, tries, odds):
     # terminal output for mode 2. accept an artifact and turn it into a sentence, and additionally tell the user how lucky they got.
-    os = f"Your artifact is an {'on-set ' if artifact[0] == 0 else 'off-set '} {artifact_list[artifact[1]]} with mainstat {list(mainstat_odds[artifact[1]].items())[artifact[2]][0]}"
+    os = f"Your artifact is an {'on-set ' if artifact[0] == 0 else 'off-set '}{artifact_list[artifact[1]]} with mainstat {list(mainstat_odds[artifact[1]].items())[artifact[2]][0]}"
     prob_better = rin((1-(1-odds)**tries)*100,4)
     string_better = "\u001b[32m" + str(prob_better) + "\u001b[0m" if prob_better < 50 else "\u001b[31m" + str(prob_better) + "\u001b[0m" # this is not allowed in f-strings so it has to be this annoying
     os += f". The odds for this artifact are {rin(odds*100,4)}%, {'and' if prob_better > 20 else 'but'} you got it in {tries} tries. The probability of a better result is {string_better}%. (smaller number = better, 50% is average)."
@@ -347,7 +347,9 @@ def main():
             if len(found) > len(goal_artifacts):
                 print(found)
                 print(goal_artifacts[j])
+                print(artifact)
                 print(index_pa)
+                break
 
         # somehow note down what the artifacts we have to pop are, and then pop them, while returning the odds and finding the amount of tries it took
 
