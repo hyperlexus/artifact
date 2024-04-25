@@ -1,5 +1,5 @@
 # hooray, no external libraries needed for the entire code
-import random, math, sys, copy, time
+import random, math, sys, copy
 
 artifact_list = ["flower", "feather", "sands", "goblet", "circlet"]
 # data from the wiki
@@ -138,7 +138,7 @@ def add_substats(artifact, mode):
 
 def not_for_rolling(mode):
     artifact = new_mainstat_artifact()
-    artifact.append(add_substats(new_mainstat_artifact(), mode))
+    artifact.append(add_substats(artifact, mode))
     artifact[3] = artifact[3][:-2] if artifact[3][4] == -1 else artifact[3][:-1]
     return artifact
 
@@ -188,7 +188,7 @@ def output_0(artifact, mode):
     for i in range(len(artifact[3])):
         os += f"{substat_list[artifact[3][i]]}{', ' if i < len(artifact[3])-1 else ''}"
     os += '.'
-    return os, artifact
+    return os
 
 def output_1(artifacts):
     # terminal output for mode 1. takes one or two artifacts and turns it into a sentence, can consider double 5stars from domains.
@@ -251,7 +251,10 @@ def input_artifact(mode, iteration):
                     continue
             for i in range(amount):
                 print(f"List of possible substats: {', '.join(allowed_list)}")
-                desired_substat = int(input(f"Input a number from 1 to {len(allowed_list)}, corresponding with the list above: "))-1
+                while True:
+                    desired_substat = int(input(f"Input a number from 1 to {len(allowed_list)}, corresponding with the list above: "))-1
+                    if 0<desired_substat<len(allowed_list):
+                        break
                 goal_artifact[3].append(am(allowed_list[desired_substat], substat_list))
                 allowed_list.pop(desired_substat)
     except ValueError:
