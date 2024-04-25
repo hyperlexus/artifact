@@ -211,8 +211,8 @@ def output_2(artifact, tries, odds):
     return os
 
 def output_3(artifact):
-     str = output_0(artifact, 3)
-     return str
+    str = output_0(artifact, 3)
+    return str
 
 def input_artifact(mode, iteration):
     # takes user input to construct own artifact. Mode 2 is just main stat, Mode 3 is sub-stats and Mode 4 is sub-stats and rolls.
@@ -370,8 +370,8 @@ def main():
 
 
 while True:
-    print()
     main()
+
     if input("Do you want to run the script again? (Y/n)") != "n":
         double_runs = 0
         continue

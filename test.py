@@ -56,5 +56,22 @@ def ca3(a, b, n):
                 return False
     return True
 
-print(ca3([0, 1, 0, [1, 4, 8, 9]], [0, 1, 0, [8, 9, 12]], 1))
-print(ca3([0, 1, 0, [1, 4, 8, 9]], [0, 1, 0, [8, 4, 9]], 1))
+#print(ca3([0, 1, 0, [1, 4, 8, 9]], [0, 1, 0, [8, 9, 12]], 1))
+#print(ca3([0, 1, 0, [1, 4, 8, 9]], [0, 1, 0, [8, 4, 9]], 1))
+
+def cso(di):
+    d = {"HP": 6, "ATK": 6, "DEF": 6, "%HP": 4, "%ATK": 4, "%DEF": 4, "ER": 4, "EM": 4, "CR": 4, "CD": 4}
+    tw,pr = sum(d.values()),1.0
+    for i in di:
+        if i in d:
+            iw = d[i]
+            pr *= iw / tw
+            tw -= iw
+            del d[i]
+    return pr
+
+
+di = ["CR"]
+
+pr = cso(di)
+#print("The probability of getting the desired items is:", pr)
