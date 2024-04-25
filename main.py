@@ -373,10 +373,8 @@ def main():
 
 
 while True:
-    print()
     main()
     if input("Do you want to run the script again? (Y/n)") != "n":
-        double_runs = 0
         continue
     else:
         break
