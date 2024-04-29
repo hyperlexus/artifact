@@ -180,6 +180,22 @@ def resin(runs, mode):
     os += " (this is an estimate as it is random if you get 2 artifacts from 1 domain run.)" if mode == 0 else ""
     return os
 
+def howmany():
+    while True:
+        amount = input("How many artifacts do you want to generate? Input \'set\' to generate an entire set: ")
+        if amount == "set":
+            break
+        try:
+            amount = int(amount)
+            if amount > 0:
+                break
+        except ValueError:
+            print("Please enter a number greater than 0 or \'set\'.")
+            continue
+        if amount < 1:
+            print("Please enter a number greater than 0 or \'set\'.")
+    return amount
+
 def output_0(artifact, mode):
     # terminal output for mode 0 and part of output_3(). take an artifact in the form of [a, b, c, [d, e, f, (g, -1/-2)]] and turn it into a sentence.
     if mode == 0:
@@ -214,7 +230,7 @@ def output_3(artifact):
      str = output_0(artifact, 3)
      return str
 
-def input_artifact(mode, iteration):
+def input_artifact(mode, iteration, entire):
     # takes user input to construct own artifact. Mode 2 is just main stat, Mode 3 is sub-stats and Mode 4 is sub-stats and rolls.
     try:
 
@@ -222,8 +238,23 @@ def input_artifact(mode, iteration):
             print(f"\nYou are now inputting artifact number {iteration+1}.")
             print("\nIt is assumed that you want your artifact to be on-set, so this input step is skipped.")
             goal_artifact = [0]
-            print(f"List of artifact types: {', '.join(artifact_list)}")
-            goal_artifact.append(int(input(f"Input a number from 1 to 5, corresponding with the list above: "))-1)
+            if not entire:
+                while True:
+                    print(f"List of artifact types: {', '.join(artifact_list)}")
+                    mainstat = (input(f"Input a number from 1 to 5, corresponding with the list above: "))
+                    try:
+                        mainstat = int(mainstat)
+                        if 0<mainstat<6:
+                            goal_artifact.append(mainstat-1)
+                        else:
+                            print("Please enter a number from 1 to 5.")
+                            continue
+                        break
+                    except ValueError:
+                        print("Please only input numbers.")
+            else:
+                goal_artifact.append(iteration)
+
             if goal_artifact[1] < 0 or goal_artifact[1] > 4:
                 return False
             desired_dict = mainstat_odds[goal_artifact[1]]
@@ -310,14 +341,17 @@ def main():
             print(f"Artifacts generated: {x+double_runs}. This is {x*20/(x+double_runs):.5f} resin per artifact. Note that this number becomes more accurate the more domain runs you do; it converges to 18.84956 Resin with n → ∞")
         case 2:
             goal_artifacts = []
-            amount = int(input("How many artifacts do you want to generate? "))
+            amount, entire = None, False
+            amount = howmany()
+            if amount == "set":
+                amount = 5
+                entire = True
             for i in range(amount):
-                goal_artifacts.append(input_artifact(2, i))
+                goal_artifacts.append(input_artifact(2, i, entire))
                 while not goal_artifacts[i]:
-                    print('')
-                    print("\u001b[31mYou seem to have made a mistake in the artifact inputting process, please read the instructions closely and try again.\u001b[0m")
+                    print("\n\u001b[31mYou seem to have made a mistake in the artifact inputting process, please read the instructions closely and try again.\u001b[0m")
                     goal_artifacts.pop()
-                    goal_artifacts.append(input_artifact(2, i))
+                    goal_artifacts.append(input_artifact(2, i, entire))
             index, index_pa = 0, 1
             tries = []
             print('')
@@ -337,19 +371,27 @@ def main():
             print(f"\nThe entire process took {index} tries. Tries per artifact: {', '.join([str(i) for i in tries])}")
             print(resin(index, 0))
         case 3:
-            goal_artifacts = []
-            amount = int(input("How many artifacts do you want to generate? "))
-            domain_mode = int(input('input chance for 4 substats. domain = 20%, strongbox = 34%. (0 = domain, 1 = strongbox): '))
+            goal_artifacts, tries, found = [], [], []
+            amount, entire = None, False
+            amount = howmany()
+            while True:
+                try:
+                    domain_mode = int(input('input chance for 4 substats. domain = 20%, strongbox = 34%. (0 = domain, 1 = strongbox): '))
+                    if -1<domain_mode<2:
+                        break
+                except ValueError:
+                    print("Please only input 0 or 1.")
+            if amount == "set":
+                amount = 5
+                entire = True
             for i in range(amount):
-                goal_artifacts.append(input_artifact(3, i))
+                goal_artifacts.append(input_artifact(3, i, entire))
                 while not goal_artifacts[i]:
                     print("\n\u001b[31mYou seem to have made a mistake in the artifact inputting process, please read the instructions closely and try again.\u001b[0m")
                     goal_artifacts.pop()
-                    goal_artifacts.append(input_artifact(3, i))
+                    goal_artifacts.append(input_artifact(3, i, entire))
             index, index_pa = 0, 1
-            tries = []
             print('')
-            found = []
             artifact = not_for_rolling(domain_mode)
             while len(goal_artifacts) > 0:
                 for j in range(len(goal_artifacts)):
