@@ -168,10 +168,10 @@ def add_rolls(artifact):
     return artifact
 
 
-def rolling(mode):
+def rolling(domain_mode):
     # generates a fully rolled +20 artifact
     artifact = new_mainstat_artifact()
-    artifact = add_substats(artifact, mode)
+    artifact = add_substats(artifact, domain_mode)
     artifact = add_rolls(artifact)
     return artifact
 
@@ -319,33 +319,43 @@ def input_artifact(mode, iteration, entire):
                 print(f"\u001b[31mPlease input an integer from 1 to {len(desired_dict.values())}. Try again\u001b[0m\n")
 
     if mode > 2:
+        # substats, also has some mode 5 functionality
         goal_artifact.append([])
         allowed_list = copy.deepcopy(substat_list)
         item_to_pop = list(mainstat_odds[goal_artifact[1]].items())[goal_artifact[2]]
         if item_to_pop[0] in allowed_list:
             allowed_list.pop(am(item_to_pop[0], allowed_list))
-        while True:
-            amount = input("\nYou are now inputting substats. How many substats do you want to check for? (1 to 4) ")
-            try:
-                amount = int(amount)
-                if 0 < amount < 5:
-                    break
-            except ValueError:
-                pass
-            print("\u001b[32mAn artifact only has a minimum of 1, and a maximum of 4 substats. \u001b[31mPlease input an integer from (including) 1 to 4:\u001b[0m ")
+        if mode < 5:
+            while True:
+                amount = input("You are now inputting substats. How many substats do you want to check for? (1 to 4) ")
+                try:
+                    amount = int(amount)
+                    if 0 < amount < 5:
+                        break
+                except ValueError:
+                    pass
+                print("\u001b[32mAn artifact only has a minimum of 1, and a maximum of 4 substats. \u001b[31mPlease input an integer from (including) 1 to 4:\u001b[0m ")
+        elif mode == 5:
+            amount = 4
+            print("Please input the four substats that the artifact has. It will be determined later if it generated with 3 or 4 substats.\n")
         for i in range(amount):
             print(f"List of possible substats: {', '.join(allowed_list)}")
             while True:
                 desired_substat = input(f"Input a number from 1 to {len(allowed_list)}, corresponding with the list above: ")
                 try:
                     desired_substat = int(desired_substat) - 1
-                    if 0 < desired_substat < len(allowed_list):
+                    if -1 < desired_substat < len(allowed_list):
                         break
                 except ValueError:
                     pass
                 print(f"\u001b[31mPlease input an integer from (including) 1 to {len(allowed_list)}. Try again\u001b[0m ")
             goal_artifact[3].append(am(allowed_list[desired_substat], substat_list))
             allowed_list.pop(desired_substat)
+        if mode == 5:
+            if input("Has the artifact rolled 4 substats when it was generated? (Y/n) ") == "n":
+                goal_artifact[3].append(-1)
+            else:
+                goal_artifact[3].append(-2)
     return goal_artifact
 
 
@@ -502,13 +512,29 @@ def main():
             print(resin(index, 0))
         case 4:
             print(base_output(rolling(0), 4))
+        case 5:
+            switch = input("Do you want to input the artifact to roll? (Y/n) ")
+            while True:
+                domain_mode = input('Input chance for 4 substats. domain = 20%, strongbox = 34%. (0 = domain, 1 = strongbox): ')
+                try:
+                    domain_mode = int(domain_mode)
+                    if domain_mode == 0 or domain_mode == 1:
+                        break
+                except ValueError:
+                    pass
+                if not domain_mode == 0 or domain_mode == 1:
+                    print("\u001b[31mPlease enter only '0' or '1'.\u001b[0m")
+            if switch == "n":
+                artifact = rolling(domain_mode)
+            else:
+                artifact = add_rolls(input_artifact(5, 0, False))
+            print(base_output(artifact, 4))
         case _:
             print("This mode has not been implemented yet. Please check back later or submit a pull request <3")
 
 
 while True:
     main()
-    if input("Do you want to run the script again? (Y/n)") != "n":
+    if input("Do you want to run the script again? (Y/n) ") != "n":
         continue
-    else:
-        break
+    break
