@@ -149,16 +149,30 @@ def add_substats(artifact, mode):
                 mod_dict.pop(substat)
                 break
     results.append(-1) if number_stats == 3 else results.append(-2)
-    return results
+    artifact.append(results)
+    return artifact
 
     # append a "-1" as substats[4] if artifact rolls 3 stats only so we know if the artifact was "supposed to" roll 3 or 4 stats.
     # we still need the 4th so we dont have to do calculations twice.
 
 
-def not_for_rolling(mode):
+def add_rolls(artifact):
+    # takes an artifact as input and returns the same artifact with its rolls attached.
+    if not len(artifact) == 4 or not len(artifact[3]) == 5:
+        return False
+    artifact.append([])
+    rolls = 4 if artifact[3][4] == -1 else 5
+    for i in range(rolls):
+        randomnumber = random.random()
+        artifact[4].append(math.floor(randomnumber*4)) if randomnumber < 0.999 else artifact[4].append(3)
+    return artifact
+
+
+def rolling(mode):
+    # generates a fully rolled +20 artifact
     artifact = new_mainstat_artifact()
-    artifact.append(add_substats(artifact, mode))
-    artifact[3] = artifact[3][:-2] if artifact[3][4] == -1 else artifact[3][:-1]
+    artifact = add_substats(artifact, mode)
+    artifact = add_rolls(artifact)
     return artifact
 
 
@@ -168,10 +182,10 @@ def domain_run():
     double_run = False
     rand = random.random()
     result.append(new_mainstat_artifact())
-    result[0].append(add_substats(result[0], 0))
+    result[0] = add_substats(result[0], 0)
     if rand < double_5star:
         result.append(new_mainstat_artifact())
-        result[1].append(add_substats(result[1], 0))
+        result[1] = add_substats(result[1], 0)
         double_run = True
     return result, double_run
 
@@ -217,13 +231,16 @@ def howmany():
     return amount
 
 
-def output_0(artifact, mode):
-    # terminal output for mode 0 and part of output_3(). take an artifact in the form of [a, b, c, [d, e, f, (g, -1/-2)]] and turn it into a sentence.
-    if mode == 0:
-        artifact[3] = artifact[3][:-2] if artifact[3][4] == -1 else artifact[3][:-1]
+def base_output(artifact, mode):
+    # base output function with multiple modes (0,3,4). take an artifact in the form of [a, b, c, [d, e, f, (g, -1/-2)]([h, i, j, k])] and turn it into a sentence.
+    actual_substats = 3 if len(artifact[3]) == 3 or artifact[3][4] == -1 else 4
     os = f"Your artifact is an {'on-set' if artifact[0] == 0 else 'off-set'} {artifact_list[artifact[1]]} with mainstat {list(mainstat_odds[artifact[1]].items())[artifact[2]][0]}. Its substats are "
-    for i in range(len(artifact[3])):
-        os += f"{substat_list[artifact[3][i]]}{', ' if i < len(artifact[3]) - 1 else ''}"
+    for i in range(actual_substats):
+        os += f"{substat_list[artifact[3][i]]}{', ' if i < actual_substats-1 else ''}"
+    if mode == 4:
+        os += f"{f', {substat_list[artifact[3][3]]} (added)' if actual_substats == 3 else ''}. It rolled into "
+        for i in range(len(artifact[4])):
+            os += f"{substat_list[artifact[3][artifact[4][i]]]}{', ' if i < len(artifact[4])-1 else ''}"
     os += '.'
     return os
 
@@ -232,12 +249,11 @@ def output_1(artifacts):
     # terminal output for mode 1. takes one or two artifacts and turns it into a sentence, can consider double 5stars from domains.
     os = '\n'
     if len(artifacts) == 1:
-        os += output_0(artifacts[0], 0)
-        # os = os[17:]
+        os += base_output(artifacts[0], 0)
         os = f"Your domain returned{os[17:]}"
     elif len(artifacts) == 2:
-        os = f"Your \u001b[33mfirst\u001b[0m{output_0(artifacts[0], 0)[4:]}"[:-1]
-        os += f". Your \u001b[34msecond\u001b[0m{output_0(artifacts[1], 0)[4:]}"
+        os = f"Your \u001b[33mfirst\u001b[0m{base_output(artifacts[0], 0)[4:]}"[:-1]
+        os += f". Your \u001b[34msecond\u001b[0m{base_output(artifacts[1], 0)[4:]}"
     return os
 
 
@@ -253,8 +269,9 @@ def output_2(artifact, tries, odds):
 
 
 def output_3(artifact):
-    os = output_0(artifact, 3)
+    os = base_output(artifact, 3)
     return os
+    # this will be expanded upon later, when i can be bothered to figure out the probabilities
 
 
 def input_artifact(mode, iteration, entire):
@@ -362,11 +379,22 @@ def main():
                     pass
                 if not domain_mode == 0 or domain_mode == 1:
                     print("\u001b[31mPlease enter only '0' or '1'.\u001b[0m")
-            x = howmany()
+            while True:
+                x = input("How many artifacts do you want to generate? ")
+                try:
+                    x = int(x)
+                    if x > 0:
+                        break
+                except ValueError:
+                    pass
+                print("\u001b[31mPlease input an integer greater than 0.\u001b[0m")
+            if x == "set":
+                x = 5
+            roll = True if input("Do you want to roll your artifact(s) after generating it? (Y/n) ") != "n" else False
             for i in range(x):
                 artifacts.append(new_mainstat_artifact())
-                artifacts[i].append(add_substats(artifacts[i], domain_mode))
-                print(output_0(artifacts[i], 0))
+                artifacts[i] = add_substats(artifacts[i], domain_mode)
+                print(base_output(artifacts[i], 0))
             print("\n" + resin(x, domain_mode)) if domain_mode == 0 else print(f"Artifacts consumed in the strongbox: {x * 3} for {x} new artifacts.")
         case 1:
             double_runs = 0
@@ -392,12 +420,12 @@ def main():
                   f"Note that this number becomes more accurate the more domain runs you do; it converges to 18.84956 Resin with n → ∞")
         case 2:
             goal_artifacts = []
-            amount, entire = None, False
-            amount = howmany()
-            if amount == "set":
-                amount = 5
+            x, entire = None, False
+            x = howmany()
+            if x == "set":
+                x = 5
                 entire = True
-            for i in range(amount):
+            for i in range(x):
                 goal_artifacts.append(input_artifact(2, i, entire))
                 while not goal_artifacts[i]:
                     print("\n\u001b[31mYou seem to have made a mistake in the artifact inputting process, "
@@ -424,8 +452,7 @@ def main():
             print(resin(index, 0))
         case 3:
             goal_artifacts, tries, found = [], [], []
-            amount, entire = None, False
-            amount = howmany()
+            x, entire = howmany(), False
             while True:
                 domain_mode = input('input chance for 4 substats. domain = 20%, strongbox = 34%. (0 = domain, 1 = strongbox): ')
                 try:
@@ -434,12 +461,11 @@ def main():
                         break
                 except ValueError:
                     pass
-                if not domain_mode == 0 or domain_mode == 1:
-                    print("\u001b[31mPlease enter only '0' or '1'.\u001b[0m")
-            if amount == "set":
-                amount = 5
+                print("\u001b[31mPlease enter only '0' or '1'.\u001b[0m")
+            if x == "set":
+                x = 5
                 entire = True
-            for i in range(amount):
+            for i in range(x):
                 goal_artifacts.append(input_artifact(3, i, entire))
                 while not goal_artifacts[i]:
                     print("\n\u001b[31mYou seem to have made a mistake in the artifact inputting process, "
@@ -448,17 +474,23 @@ def main():
                     goal_artifacts.append(input_artifact(3, i, entire))
             index, index_pa = 0, 1
             print('')
-            artifact = not_for_rolling(domain_mode)
+            artifact = new_mainstat_artifact()
+            artifact = add_substats(artifact, domain_mode)
+            using_artifact = copy.deepcopy(artifact)
+            using_artifact[3] = using_artifact[3][:-2] if using_artifact[3][4] == -1 else using_artifact[3][:-1]
             while len(goal_artifacts) > 0:
                 for j in range(len(goal_artifacts)):
                     if len(found) > 1:
                         break
-                    if ca3(artifact, goal_artifacts[j], len(goal_artifacts[j][3])):
+                    if ca3(using_artifact, goal_artifacts[j], len(goal_artifacts[j][3])):
                         found.append(goal_artifacts[am(goal_artifacts[j], goal_artifacts)])
                         break
                     else:
                         index_pa += 1
-                        artifact = not_for_rolling(domain_mode)
+                        artifact = new_mainstat_artifact()
+                        artifact = add_substats(artifact, domain_mode)
+                        using_artifact = copy.deepcopy(artifact)
+                        using_artifact[3] = using_artifact[3][:-2] if using_artifact[3][4] == -1 else using_artifact[3][:-1]
                 while len(found) > 0:
                     goal_artifacts.pop(am(found[0], goal_artifacts))
                     found.pop(0)
@@ -468,6 +500,10 @@ def main():
                     break
             print(f"\nThe entire process took {index} tries. Tries per artifact: {', '.join([str(i) for i in tries])}")
             print(resin(index, 0))
+        case 4:
+            print(base_output(rolling(0), 4))
+        case _:
+            print("This mode has not been implemented yet. Please check back later or submit a pull request <3")
 
 
 while True:
