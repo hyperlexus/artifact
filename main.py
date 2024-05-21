@@ -358,6 +358,159 @@ def input_artifact(mode, iteration, entire):
                 goal_artifact[3].append(-2)
     return goal_artifact
 
+def mode0():
+    artifacts = []
+    while True:
+        domain_mode = input('Input chance for 4 substats. domain = 20%, strongbox = 34%. (0 = domain, 1 = strongbox): ')
+        try:
+            domain_mode = int(domain_mode)
+            if domain_mode == 0 or domain_mode == 1:
+                break
+        except ValueError:
+            pass
+        if not domain_mode == 0 or domain_mode == 1:
+            print("\u001b[31mPlease enter only '0' or '1'.\u001b[0m")
+    while True:
+        x = input("How many artifacts do you want to generate? ")
+        try:
+            x = int(x)
+            if x > 0:
+                break
+        except ValueError:
+            pass
+        print("\u001b[31mPlease input an integer greater than 0.\u001b[0m")
+    if x == "set":
+        x = 5
+    roll = True if input("Do you want to roll your artifact(s) after generating it? (Y/n) ") != "n" else False
+    for i in range(x):
+        artifacts.append(new_mainstat_artifact())
+        artifacts[i] = add_substats(artifacts[i], domain_mode)
+        print(base_output(artifacts[i], 0))
+    print("\n" + resin(x, domain_mode)) if domain_mode == 0 else print(f"Artifacts consumed in the strongbox: {x * 3} for {x} new artifacts.")
+def mode1():
+    double_runs = 0
+    while True:
+        x = input("How many domain runs do you want to simulate? ")
+        try:
+            if "resin" in x:
+                x = int(int(x[:-6]) / 20)
+            else:
+                x = int(x)
+            if x > 0:
+                break
+        except ValueError:
+            pass
+        print("\u001b[31mPlease enter an integer greater than 0.\u001b[0m")
+    for i in range(x):
+        tuplo = domain_run()  # wtf duplo reference
+        print(output_1(tuplo[0]))
+        if tuplo[1]:
+            double_runs += 1
+    print("\n" + resin(x, 1))
+    print(f"Artifacts generated: {x + double_runs}. This is {x * 20 / (x + double_runs):.5f} resin per artifact."
+          f"Note that this number becomes more accurate the more domain runs you do; it converges to 18.84956 Resin with n → ∞")
+def mode2():
+    goal_artifacts = []
+    x, entire = None, False
+    x = howmany()
+    if x == "set":
+        x = 5
+        entire = True
+    for i in range(x):
+        goal_artifacts.append(input_artifact(2, i, entire))
+        while not goal_artifacts[i]:
+            print("\n\u001b[31mYou seem to have made a mistake in the artifact inputting process, "
+                  "please read the instructions closely and try again.\u001b[0m")
+            goal_artifacts.pop()
+            goal_artifacts.append(input_artifact(2, i, entire))
+    index, index_pa = 0, 1
+    tries = []
+    print('')
+    artifact = new_mainstat_artifact()
+    while len(goal_artifacts) > 0:
+        if notin(artifact, goal_artifacts):
+            artifact = new_mainstat_artifact()
+            index_pa += 1
+        else:
+            pop_index = i2d(artifact, goal_artifacts)
+            odds = round(0.5 * 0.2 * [value for value in mainstat_odds[goal_artifacts[pop_index][1]].values()][goal_artifacts[pop_index][2]], 5)
+            index += index_pa
+            tries.append(index_pa)
+            index_pa = 0
+            print(f"{output_2(goal_artifacts[pop_index], index, odds)}")
+            goal_artifacts.pop(pop_index)
+    print(f"\nThe entire process took {index} tries. Tries per artifact: {', '.join([str(i) for i in tries])}")
+    print(resin(index, 0))
+def mode3():
+    goal_artifacts, tries, found = [], [], []
+    x, entire = howmany(), False
+    while True:
+        domain_mode = input('input chance for 4 substats. domain = 20%, strongbox = 34%. (0 = domain, 1 = strongbox): ')
+        try:
+            domain_mode = int(domain_mode)
+            if domain_mode == 0 or domain_mode == 1:
+                break
+        except ValueError:
+            pass
+        print("\u001b[31mPlease enter only '0' or '1'.\u001b[0m")
+    if x == "set":
+        x = 5
+        entire = True
+    for i in range(x):
+        goal_artifacts.append(input_artifact(3, i, entire))
+        while not goal_artifacts[i]:
+            print("\n\u001b[31mYou seem to have made a mistake in the artifact inputting process, "
+                  "please read the instructions closely and try again.\u001b[0m")
+            goal_artifacts.pop()
+            goal_artifacts.append(input_artifact(3, i, entire))
+    index, index_pa = 0, 1
+    print('')
+    artifact = new_mainstat_artifact()
+    artifact = add_substats(artifact, domain_mode)
+    using_artifact = copy.deepcopy(artifact)
+    using_artifact[3] = using_artifact[3][:-2] if using_artifact[3][4] == -1 else using_artifact[3][:-1]
+    while len(goal_artifacts) > 0:
+        for j in range(len(goal_artifacts)):
+            if len(found) > 1:
+                break
+            if ca3(using_artifact, goal_artifacts[j], len(goal_artifacts[j][3])):
+                found.append(goal_artifacts[am(goal_artifacts[j], goal_artifacts)])
+                break
+            else:
+                index_pa += 1
+                artifact = new_mainstat_artifact()
+                artifact = add_substats(artifact, domain_mode)
+                using_artifact = copy.deepcopy(artifact)
+                using_artifact[3] = using_artifact[3][:-2] if using_artifact[3][4] == -1 else using_artifact[3][:-1]
+        while len(found) > 0:
+            goal_artifacts.pop(am(found[0], goal_artifacts))
+            found.pop(0)
+            index += index_pa
+            tries.append(index_pa)
+            print(output_3(artifact))
+            break
+    print(f"\nThe entire process took {index} tries. Tries per artifact: {', '.join([str(i) for i in tries])}")
+    print(resin(index, 0))
+def mode4():
+    print(base_output(rolling(0), 4))
+def mode5():
+    switch = input("Do you want to input the artifact to roll? (Y/n) ")
+    while True:
+        domain_mode = input('Input chance for 4 substats. domain = 20%, strongbox = 34%. (0 = domain, 1 = strongbox): ')
+        try:
+            domain_mode = int(domain_mode)
+            if domain_mode == 0 or domain_mode == 1:
+                break
+        except ValueError:
+            pass
+        if not domain_mode == 0 or domain_mode == 1:
+            print("\u001b[31mPlease enter only '0' or '1'.\u001b[0m")
+    if switch == "n":
+        artifact = rolling(domain_mode)
+    else:
+        artifact = add_rolls(input_artifact(5, 0, False))
+    print(base_output(artifact, 4))
+
 
 def main():
     # getting program mode from user
@@ -368,169 +521,14 @@ def main():
             if mode == -1:
                 print('\n'.join([i for i in modes]))
                 continue
-            if -2 < mode < 6:
+            if -1 < mode < 6:
                 break
         except ValueError:
             pass
         print("\u001b[31mPlease input an integer from (including) -1 to 5. Try again\u001b[0m")
     print(modes[mode])
 
-    # main execution
-    match mode:
-        case 0:
-            artifacts = []
-            while True:
-                domain_mode = input('Input chance for 4 substats. domain = 20%, strongbox = 34%. (0 = domain, 1 = strongbox): ')
-                try:
-                    domain_mode = int(domain_mode)
-                    if domain_mode == 0 or domain_mode == 1:
-                        break
-                except ValueError:
-                    pass
-                if not domain_mode == 0 or domain_mode == 1:
-                    print("\u001b[31mPlease enter only '0' or '1'.\u001b[0m")
-            while True:
-                x = input("How many artifacts do you want to generate? ")
-                try:
-                    x = int(x)
-                    if x > 0:
-                        break
-                except ValueError:
-                    pass
-                print("\u001b[31mPlease input an integer greater than 0.\u001b[0m")
-            if x == "set":
-                x = 5
-            roll = True if input("Do you want to roll your artifact(s) after generating it? (Y/n) ") != "n" else False
-            for i in range(x):
-                artifacts.append(new_mainstat_artifact())
-                artifacts[i] = add_substats(artifacts[i], domain_mode)
-                print(base_output(artifacts[i], 0))
-            print("\n" + resin(x, domain_mode)) if domain_mode == 0 else print(f"Artifacts consumed in the strongbox: {x * 3} for {x} new artifacts.")
-        case 1:
-            double_runs = 0
-            while True:
-                x = input("How many domain runs do you want to simulate? ")
-                try:
-                    if "resin" in x:
-                        x = int(int(x[:-6]) / 20)
-                    else:
-                        x = int(x)
-                    if x > 0:
-                        break
-                except ValueError:
-                    pass
-                print("\u001b[31mPlease enter an integer greater than 0.\u001b[0m")
-            for i in range(x):
-                tuplo = domain_run()  # wtf duplo reference
-                print(output_1(tuplo[0]))
-                if tuplo[1]:
-                    double_runs += 1
-            print("\n" + resin(x, 1))
-            print(f"Artifacts generated: {x + double_runs}. This is {x * 20 / (x + double_runs):.5f} resin per artifact."
-                  f"Note that this number becomes more accurate the more domain runs you do; it converges to 18.84956 Resin with n → ∞")
-        case 2:
-            goal_artifacts = []
-            x, entire = None, False
-            x = howmany()
-            if x == "set":
-                x = 5
-                entire = True
-            for i in range(x):
-                goal_artifacts.append(input_artifact(2, i, entire))
-                while not goal_artifacts[i]:
-                    print("\n\u001b[31mYou seem to have made a mistake in the artifact inputting process, "
-                          "please read the instructions closely and try again.\u001b[0m")
-                    goal_artifacts.pop()
-                    goal_artifacts.append(input_artifact(2, i, entire))
-            index, index_pa = 0, 1
-            tries = []
-            print('')
-            artifact = new_mainstat_artifact()
-            while len(goal_artifacts) > 0:
-                if notin(artifact, goal_artifacts):
-                    artifact = new_mainstat_artifact()
-                    index_pa += 1
-                else:
-                    pop_index = i2d(artifact, goal_artifacts)
-                    odds = round(0.5 * 0.2 * [value for value in mainstat_odds[goal_artifacts[pop_index][1]].values()][goal_artifacts[pop_index][2]], 5)
-                    index += index_pa
-                    tries.append(index_pa)
-                    index_pa = 0
-                    print(f"{output_2(goal_artifacts[pop_index], index, odds)}")
-                    goal_artifacts.pop(pop_index)
-            print(f"\nThe entire process took {index} tries. Tries per artifact: {', '.join([str(i) for i in tries])}")
-            print(resin(index, 0))
-        case 3:
-            goal_artifacts, tries, found = [], [], []
-            x, entire = howmany(), False
-            while True:
-                domain_mode = input('input chance for 4 substats. domain = 20%, strongbox = 34%. (0 = domain, 1 = strongbox): ')
-                try:
-                    domain_mode = int(domain_mode)
-                    if domain_mode == 0 or domain_mode == 1:
-                        break
-                except ValueError:
-                    pass
-                print("\u001b[31mPlease enter only '0' or '1'.\u001b[0m")
-            if x == "set":
-                x = 5
-                entire = True
-            for i in range(x):
-                goal_artifacts.append(input_artifact(3, i, entire))
-                while not goal_artifacts[i]:
-                    print("\n\u001b[31mYou seem to have made a mistake in the artifact inputting process, "
-                          "please read the instructions closely and try again.\u001b[0m")
-                    goal_artifacts.pop()
-                    goal_artifacts.append(input_artifact(3, i, entire))
-            index, index_pa = 0, 1
-            print('')
-            artifact = new_mainstat_artifact()
-            artifact = add_substats(artifact, domain_mode)
-            using_artifact = copy.deepcopy(artifact)
-            using_artifact[3] = using_artifact[3][:-2] if using_artifact[3][4] == -1 else using_artifact[3][:-1]
-            while len(goal_artifacts) > 0:
-                for j in range(len(goal_artifacts)):
-                    if len(found) > 1:
-                        break
-                    if ca3(using_artifact, goal_artifacts[j], len(goal_artifacts[j][3])):
-                        found.append(goal_artifacts[am(goal_artifacts[j], goal_artifacts)])
-                        break
-                    else:
-                        index_pa += 1
-                        artifact = new_mainstat_artifact()
-                        artifact = add_substats(artifact, domain_mode)
-                        using_artifact = copy.deepcopy(artifact)
-                        using_artifact[3] = using_artifact[3][:-2] if using_artifact[3][4] == -1 else using_artifact[3][:-1]
-                while len(found) > 0:
-                    goal_artifacts.pop(am(found[0], goal_artifacts))
-                    found.pop(0)
-                    index += index_pa
-                    tries.append(index_pa)
-                    print(output_3(artifact))
-                    break
-            print(f"\nThe entire process took {index} tries. Tries per artifact: {', '.join([str(i) for i in tries])}")
-            print(resin(index, 0))
-        case 4:
-            print(base_output(rolling(0), 4))
-        case 5:
-            switch = input("Do you want to input the artifact to roll? (Y/n) ")
-            while True:
-                domain_mode = input('Input chance for 4 substats. domain = 20%, strongbox = 34%. (0 = domain, 1 = strongbox): ')
-                try:
-                    domain_mode = int(domain_mode)
-                    if domain_mode == 0 or domain_mode == 1:
-                        break
-                except ValueError:
-                    pass
-                if not domain_mode == 0 or domain_mode == 1:
-                    print("\u001b[31mPlease enter only '0' or '1'.\u001b[0m")
-            if switch == "n":
-                artifact = rolling(domain_mode)
-            else:
-                artifact = add_rolls(input_artifact(5, 0, False))
-            print(base_output(artifact, 4))
-        case _:
-            print("This mode has not been implemented yet. Please check back later or submit a pull request <3")
+    (mode0, mode1, mode2, mode3, mode4, mode5)[mode]() #tuple of functions, index is mode
 
 
 while True:

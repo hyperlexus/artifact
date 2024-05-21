@@ -1,3 +1,5 @@
+import cProfile
+
 def notin(x, y):
     return not any(all(x_elem == y_elem for x_elem, y_elem in zip(x, sub_array)) for sub_array in y)
 
@@ -22,12 +24,6 @@ def rin(n,x):
 
 r = rin(3.141595, 8)
 #print(r)
-
-
-arr = [1,2]
-arr.append([])
-arr[2].append(1)
-#print(arr)
 
 def matcher(s,a):
     for i in range(len(a)):
